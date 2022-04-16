@@ -5,7 +5,7 @@ class Game {
     string grid[7];
     vector<int> elementInRow;
     vector<int> elementInCol;
-    vector<int> elementInDiagonal;
+    vector<int> elementInDiagonal; //diagonal 1 = \ direction, diagonal 2 = / direction
 
 public:
     Game() {
@@ -21,10 +21,47 @@ public:
         }
     }
 
+    int getElementInRow(int row) {
+        return elementInRow[row];
+    }
+
+    int getElementInCol(int col) {
+        return elementInCol[col];
+    }
+
     friend class Player;
     friend ostream& operator << (ostream& output, Game board);
+    bool evaluateRow(int row);
+    bool evaluateCol(int col);
+    bool evaluateDiagonal(int diagonal);
     void debug();
 };
+
+ostream& operator << (ostream& output, Game board) {
+    for (auto& row : board.grid) {
+        output << row << "\n";
+    }
+
+    return output;
+}
+
+bool Game::evaluateRow(int row) {
+    int r = row*2 - 1;
+    return (grid[r][6] == grid[r][2] && grid[r][6] == grid[r][10]);
+}
+
+bool Game::evaluateCol(int col) {
+    int c = col*4 - 2;
+    return (grid[4][c] == grid[2][c] && grid[4][c] == grid[6][c]);
+}
+
+bool Game::evaluateDiagonal(int diagonal) {
+    if (diagonal == 1) {
+        return (grid[4][6] == grid[2][2] && grid[4][6] == grid[6][10]);
+    } else {
+        return (grid[4][6] == grid[6][2] && grid[4][6] == grid[2][10]);
+    }
+}
 
 void Game::debug() {
     cout << *this << "\n";
@@ -37,14 +74,6 @@ void Game::debug() {
     for (int d = 1; d <= 2; d++) {
         cout << "Elements in diagonal " << d << " = " << elementInCol[d] << "\n";
     }
-}
-
-ostream& operator << (ostream& output, Game board) {
-    for (auto& row : board.grid) {
-        output << row << "\n";
-    }
-
-    return output;
 }
 
 
@@ -60,7 +89,7 @@ public:
     }
 
     void setGame(Game *game);
-    void choose(int pos_x, int pos_y);
+    void choose(int col, int row);
 };
 int Player::no = 0;
 
@@ -68,16 +97,37 @@ void Player::setGame(Game *game) {
     this->game = game;
 }
 
-void Player::choose(int pos_x, int pos_y) {
-    int row = pos_y*2 - 1;
-    int col = pos_x*4 - 2;
-    this->game->grid[row][col] = this->symbol;
+void Player::choose(int col, int row) {
+    int r = row*2 - 1;
+    int c = col*4 - 2;
 
-    this->game->elementInCol[pos_x]++;
-    this->game->elementInRow[pos_y]++;
+    this->game->grid[r][c] = this->symbol;
+    this->game->elementInRow[row]++;
+    this->game->elementInCol[col]++;
 
-    if (pos_x == pos_y) this->game->elementInDiagonal[1]++;
-    if (pos_x == 4 - pos_y) this->game->elementInDiagonal[2]++;
+    // if (this->game->elementInRow[row] == 3) {
+    //     this->game->evaluateRow(row);
+    // }
+
+    // if (this->game->elementInCol[col] == 3) {
+    //     this->game->evaluateCol(col);
+    // }
+
+    // if (col == row) {
+    //     int diagonal = 1;
+    //     int &element = this->game->elementInDiagonal[diagonal];
+    //     element++;
+
+    //     if (element == 3) this->game->evaluateDiagonal(diagonal);
+    // }
+
+    // if (col == 4 - row) {
+    //     int diagonal = 2;
+    //     int &element = this->game->elementInDiagonal[diagonal];
+    //     element++;
+
+    //     if (element == 3) this->game->evaluateDiagonal(diagonal);
+    // }
 }
 
 
@@ -92,9 +142,16 @@ int main() {
     player_2.choose(2, 2);
     player_1.choose(2, 1);
     player_2.choose(3, 2);
-    player_1.choose(3, 1);
 
-    game.debug();
+    cout << "Enter \"3 1\"\n";
+    int col, row; cin >> col >> row;
+    player_1.choose(col, row);
+    cout << game << "\n";
+    if (game.getElementInRow(row) == 3) {
+        if (game.evaluateRow(row)) cout << "You Win!\n";
+    }
+
+    // game.debug();
 
     return 0;
 }
