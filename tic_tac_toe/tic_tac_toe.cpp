@@ -5,7 +5,7 @@ class Game {
     string grid[7];
     vector<int> elementInRow;
     vector<int> elementInCol;
-    vector<int> elementInDiagonal; //diagonal 1 = \ direction, diagonal 2 = / direction
+    vector<int> elementInDiagonal; //diagonal[1] = \ direction, diagonal[2] = / direction
 
 public:
     Game() {
@@ -21,21 +21,37 @@ public:
         }
     }
 
-    int getElementInRow(int row) {
-        return elementInRow[row];
-    }
-
-    int getElementInCol(int col) {
-        return elementInCol[col];
-    }
+    int getElementInRow(int row);
+    int getElementInCol(int col);
+    int getElementInDiagonal(int diagonal);
 
     friend class Player;
     friend ostream& operator << (ostream& output, Game board);
     bool evaluateRow(int row);
     bool evaluateCol(int col);
     bool evaluateDiagonal(int diagonal);
+    bool gridIsEmpty(int col, int row);
+    bool isOver(int col, int row);
     void debug();
 };
+
+int Game::getElementInRow(int row) {
+    return elementInRow[row];
+}
+
+int Game::getElementInCol(int col) {
+    return elementInCol[col];
+}
+
+int Game::getElementInDiagonal(int diagonal) {
+    return elementInDiagonal[diagonal];
+}
+
+bool Game::gridIsEmpty(int col, int row) {
+    int r = row*2 - 1;
+    int c = col*4 - 2;
+    return (this->grid[r][c] == ' ');
+}
 
 ostream& operator << (ostream& output, Game board) {
     for (auto& row : board.grid) {
@@ -52,14 +68,14 @@ bool Game::evaluateRow(int row) {
 
 bool Game::evaluateCol(int col) {
     int c = col*4 - 2;
-    return (grid[4][c] == grid[2][c] && grid[4][c] == grid[6][c]);
+    return (grid[3][c] == grid[1][c] && grid[3][c] == grid[5][c]);
 }
 
 bool Game::evaluateDiagonal(int diagonal) {
     if (diagonal == 1) {
-        return (grid[4][6] == grid[2][2] && grid[4][6] == grid[6][10]);
+        return (grid[3][6] == grid[1][2] && grid[3][6] == grid[5][10]);
     } else {
-        return (grid[4][6] == grid[6][2] && grid[4][6] == grid[2][10]);
+        return (grid[3][6] == grid[5][2] && grid[3][6] == grid[1][10]);
     }
 }
 
@@ -72,14 +88,23 @@ void Game::debug() {
         cout << "Elements in col " << c << " = " << elementInCol[c] << "\n";
     }
     for (int d = 1; d <= 2; d++) {
-        cout << "Elements in diagonal " << d << " = " << elementInCol[d] << "\n";
+        cout << "Elements in diagonal " << d << " = " << elementInDiagonal[d] << "\n";
     }
 }
 
+bool Game::isOver(int col, int row) {
+    return (
+        (this->getElementInCol(col) == 3 && this->evaluateCol(col)) ||
+        (this->getElementInRow(row) == 3 && this->evaluateRow(row)) ||
+        (this->getElementInDiagonal(1) == 3 && this->evaluateDiagonal(1)) ||
+        (this->getElementInDiagonal(2) == 3 && this->evaluateDiagonal(2))
+    );
+}
 
 class Player {
     Game *game;
     static int no;
+    string name;
     char symbol;
     
 public:
@@ -89,6 +114,8 @@ public:
     }
 
     void setGame(Game *game);
+    void setName(string name);
+    string getName();
     void choose(int col, int row);
 };
 int Player::no = 0;
@@ -104,54 +131,60 @@ void Player::choose(int col, int row) {
     this->game->grid[r][c] = this->symbol;
     this->game->elementInRow[row]++;
     this->game->elementInCol[col]++;
-
-    // if (this->game->elementInRow[row] == 3) {
-    //     this->game->evaluateRow(row);
-    // }
-
-    // if (this->game->elementInCol[col] == 3) {
-    //     this->game->evaluateCol(col);
-    // }
-
-    // if (col == row) {
-    //     int diagonal = 1;
-    //     int &element = this->game->elementInDiagonal[diagonal];
-    //     element++;
-
-    //     if (element == 3) this->game->evaluateDiagonal(diagonal);
-    // }
-
-    // if (col == 4 - row) {
-    //     int diagonal = 2;
-    //     int &element = this->game->elementInDiagonal[diagonal];
-    //     element++;
-
-    //     if (element == 3) this->game->evaluateDiagonal(diagonal);
-    // }
+    if (col == row) this->game->elementInDiagonal[1]++;
+    if (col == 4 - row) this->game->elementInDiagonal[2]++;
 }
 
+void Player::setName(string name) {
+    this->name = name;
+}
+
+string Player::getName() {
+    return this->name;
+}
 
 
 int main() {
     Game game;
     Player player_1, player_2;
     player_1.setGame(&game);
+    player_1.setName("Doggy");
     player_2.setGame(&game);
+    player_2.setName("Picko");
 
-    player_1.choose(1, 1);
-    player_2.choose(2, 2);
-    player_1.choose(2, 1);
-    player_2.choose(3, 2);
-
-    cout << "Enter \"3 1\"\n";
-    int col, row; cin >> col >> row;
-    player_1.choose(col, row);
+    int round = 0;
     cout << game << "\n";
-    if (game.getElementInRow(row) == 3) {
-        if (game.evaluateRow(row)) cout << "You Win!\n";
-    }
+    while (true) {
+        round++;
+        Player &currentPlayer = (round % 2 == 1 ? player_1 : player_2);
+        cout << currentPlayer.getName() << "'s turn!\n";
 
-    // game.debug();
+        int col, row;
+
+        //process input
+        while (true) {
+            cout << "Choose position: ";
+            cin >> col >> row;
+            if ((row >= 1 && row <= 3) && (col >= 1 && col <= 3) && game.gridIsEmpty(col, row))
+                break;
+            
+            cout << "Invalid position!\n\n";
+        }
+        currentPlayer.choose(col, row);
+        cout << "\n" << game << "\n";
+
+        // check winner
+        if (game.isOver(col, row)) {
+            cout << currentPlayer.getName() << " wins!\n";
+            break;
+        }
+
+        // check if the grid is full with 9 rounds
+        if (round == 9) {
+            cout << "Draw!\n";
+            break;
+        }
+    }
 
     return 0;
 }
