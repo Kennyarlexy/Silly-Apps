@@ -30,7 +30,7 @@ public:
     bool evaluateRow(int row);
     bool evaluateCol(int col);
     bool evaluateDiagonal(int diagonal);
-    bool gridIsEmpty(int col, int row);
+    bool canChoose(int col, int row);
     bool isOver(int col, int row);
     void debug();
 };
@@ -66,7 +66,7 @@ int Game::getElementInDiagonal(int diagonal) {
     return elementInDiagonal[diagonal];
 }
 
-bool Game::gridIsEmpty(int col, int row) {
+bool Game::canChoose(int col, int row) {
     int r = row*2 - 1;
     int c = col*4 - 2;
     return (this->grid[r][c] == ' ');
@@ -147,7 +147,7 @@ void Player::choose(int col, int row) {
 }
 
 //global function definition-----------------------------------------------------------------------------------
-void play(Player &player_1, Player &player_2, const bool turn) {
+void play(Player &player_1, Player &player_2, bool turn) {
     Game game;
     player_1.setGame(&game);
     player_2.setGame(&game);
@@ -170,7 +170,7 @@ void play(Player &player_1, Player &player_2, const bool turn) {
         while (true) {
             cout << "Choose position: ";
             cin >> col >> row;
-            if ((row >= 1 && row <= 3) && (col >= 1 && col <= 3) && game.gridIsEmpty(col, row))
+            if ((row >= 1 && row <= 3) && (col >= 1 && col <= 3) && game.canChoose(col, row))
                 break;
             
             cout << "Invalid position!\n\n";
@@ -202,12 +202,12 @@ int main() {
     player_1.setName(name_1);
     player_2.setName(name_2);
 
-    bool playing = true, turn = true;
-    while (playing) {
+    bool turn = true;
+    while (true) {
         play(player_1, player_2, turn);
         string ans;
         cout << "Play again? (y/n)\n>>> "; cin >> ans;
-        if (ans != "y") playing = false;
+        if (ans != "y") break;
         turn = !turn;
     }
 
