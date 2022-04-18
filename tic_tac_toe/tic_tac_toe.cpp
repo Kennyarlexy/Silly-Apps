@@ -35,6 +35,25 @@ public:
     void debug();
 };
 
+class Player {
+    Game *game;
+    static int no;
+    string name;
+    char symbol;
+    
+public:
+    Player() {
+        this->no++;
+        this->symbol = (no % 2 == 1 ? 'O' : 'X');
+    }
+
+    void setGame(Game *game);
+    void setName(string name);
+    string getName();
+    void choose(int col, int row);
+};
+
+//Game::function() definition----------------------------------------------------------------------------------
 int Game::getElementInRow(int row) {
     return elementInRow[row];
 }
@@ -79,6 +98,15 @@ bool Game::evaluateDiagonal(int diagonal) {
     }
 }
 
+bool Game::isOver(int col, int row) {
+    return (
+        (this->getElementInCol(col) == 3 && this->evaluateCol(col)) ||
+        (this->getElementInRow(row) == 3 && this->evaluateRow(row)) ||
+        (this->getElementInDiagonal(1) == 3 && this->evaluateDiagonal(1)) ||
+        (this->getElementInDiagonal(2) == 3 && this->evaluateDiagonal(2))
+    );
+}
+
 void Game::debug() {
     cout << *this << "\n";
     for (int r = 1; r <= 3; r++) {
@@ -92,36 +120,19 @@ void Game::debug() {
     }
 }
 
-bool Game::isOver(int col, int row) {
-    return (
-        (this->getElementInCol(col) == 3 && this->evaluateCol(col)) ||
-        (this->getElementInRow(row) == 3 && this->evaluateRow(row)) ||
-        (this->getElementInDiagonal(1) == 3 && this->evaluateDiagonal(1)) ||
-        (this->getElementInDiagonal(2) == 3 && this->evaluateDiagonal(2))
-    );
-}
-
-class Player {
-    Game *game;
-    static int no;
-    string name;
-    char symbol;
-    
-public:
-    Player() {
-        this->no++;
-        symbol = (no % 2 == 1 ? 'O' : 'X');
-    }
-
-    void setGame(Game *game);
-    void setName(string name);
-    string getName();
-    void choose(int col, int row);
-};
+//Player::function() definition--------------------------------------------------------------------------------
 int Player::no = 0;
 
 void Player::setGame(Game *game) {
     this->game = game;
+}
+
+void Player::setName(string name) {
+    this->name = name;
+}
+
+string Player::getName() {
+    return this->name;
 }
 
 void Player::choose(int col, int row) {
@@ -135,29 +146,23 @@ void Player::choose(int col, int row) {
     if (col == 4 - row) this->game->elementInDiagonal[2]++;
 }
 
-void Player::setName(string name) {
-    this->name = name;
-}
-
-string Player::getName() {
-    return this->name;
-}
-
-
-int main() {
+//global function definition-----------------------------------------------------------------------------------
+void play(Player &player_1, Player &player_2, const bool turn) {
     Game game;
-    Player player_1, player_2;
     player_1.setGame(&game);
-    player_1.setName("Doggy");
     player_2.setGame(&game);
-    player_2.setName("Picko");
+    cout << game << "\n";
 
     int round = 0;
-    cout << game << "\n";
     while (true) {
         round++;
-        Player &currentPlayer = (round % 2 == 1 ? player_1 : player_2);
-        cout << currentPlayer.getName() << "'s turn!\n";
+        Player *currentPlayer;
+        if (turn) {
+            currentPlayer = (round % 2 == 1 ? &player_1 : &player_2);
+        } else {
+            currentPlayer = (round % 2 == 1 ? &player_2 : &player_1);
+        }
+        cout << currentPlayer->getName() << "'s turn!\n";
 
         int col, row;
 
@@ -170,12 +175,12 @@ int main() {
             
             cout << "Invalid position!\n\n";
         }
-        currentPlayer.choose(col, row);
+        currentPlayer->choose(col, row);
         cout << "\n" << game << "\n";
 
         // check winner
         if (game.isOver(col, row)) {
-            cout << currentPlayer.getName() << " wins!\n";
+            cout << currentPlayer->getName() << " wins!\n";
             break;
         }
 
@@ -184,6 +189,26 @@ int main() {
             cout << "Draw!\n";
             break;
         }
+    }
+}
+
+
+int main() {
+    Player player_1, player_2;
+    string name_1, name_2;
+    cout << "Welcome to Tic Tac Toe Game!\n";
+    cout << "Player 1's name: "; cin >> name_1;
+    cout << "Player 2's name: "; cin >> name_2; cout << "\n";
+    player_1.setName(name_1);
+    player_2.setName(name_2);
+
+    bool playing = true, turn = true;
+    while (playing) {
+        play(player_1, player_2, turn);
+        string ans;
+        cout << "Play again? (y/n)\n>>> "; cin >> ans;
+        if (ans != "y") playing = false;
+        turn = !turn;
     }
 
     return 0;
