@@ -77,9 +77,7 @@ bool Game::canChoose(int col, int row) {
 }
 
 bool Game::isOver(int col, int row) {
-    return (
-        this->evaluateCol(col) || this->evaluateRow(row) || this->evaluateDiagonal()
-    );
+    return (this->evaluateCol(col) || this->evaluateRow(row) || this->evaluateDiagonal());
 }
 
 //Player::function() definition--------------------------------------------------------------------------------
